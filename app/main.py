@@ -1,4 +1,5 @@
 import random
+import os
 
 from fastapi import FastAPI
 from redis_om import get_redis_connection, HashModel
@@ -6,9 +7,9 @@ from redis_om import get_redis_connection, HashModel
 app = FastAPI()
 
 redis = get_redis_connection(
-    host="localhost",
+    host=os.environ['inventory-db-name'],
     port=6379,
-    password="eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81",
+    password=os.environ['inventory-db-pass'],
     decode_responses=True
 )
 
