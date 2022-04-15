@@ -1,17 +1,27 @@
-from main import redis, Product
+from main import Product
+from redis_om import get_redis_connection, HashModel
+
+import os
 import time
 
 key = 'order_completed'
 group = 'inventory-group'
 
+eventq = get_redis_connection(
+    host=os.environ['eventq-host-name'],
+    port=6379,
+    password=os.environ['eventq-pass'],
+    decode_responses=True
+)
+
 try:
-    redis.xgroup_create(key, group)
+    eventq.xgroup_create(key, group)
 except:
     print('Group already exists!')
 
 while True:
     try:
-        results = redis.xreadgroup(group, key, {key: '>'}, None)
+        results = eventq.xreadgroup(group, key, {key: '>'}, None)
 
         if results:
             for result in results:
@@ -21,7 +31,7 @@ while True:
                     product.stock = product.stock - int(obj['quantity'])
                     product.save()
                 except:
-                    redis.xadd('refund_order', obj, '*')
+                    eventq.xadd('refund_order', obj, '*')
 
     except Exception as e:
         print(str(e))
